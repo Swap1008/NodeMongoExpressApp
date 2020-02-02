@@ -2,6 +2,11 @@ const express=require('express');
 const path=require('path')
 const mongoose=require('mongoose');
 const bodyParser=require('body-parser');
+const expressValidator=require('express-validator');
+const flash=require('connect-flash');
+const session=require('express-session');
+
+
 const app=express();
 
 // Mongoose
@@ -33,6 +38,40 @@ app.use(express.static(path.join(__dirname,'/public')));
 // Middleware
 app.use(express.urlencoded({urlencoded:true}));
 app.use(express.json());
+
+// Express Session Middleware
+app.use(session({
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: true }
+  }));
+
+// Express Messages
+app.use(require('connect-flash')());
+app.use(function (req, res, next) {
+  res.locals.messages = require('express-messages')(req, res);
+  next();
+});  
+
+// Express Validator
+app.use(expressValidator({
+    errorFormater:function(param,msg,value){
+        let namespace=param.split('.')
+        , root= namespace.shift()
+        , formParam= root;
+
+        while (namespace.length) {
+            formParam += '[' +namespace +']';
+
+        }
+        return {
+            param: formParam,
+            msg:msg,
+            value:value
+        };
+    }
+}));
 
 // Routes
 app.get('/',(req,res)=>{
@@ -109,6 +148,8 @@ app.post('/article/edit/:id',(req,res)=>{
     article.body=req.body.body;
 
     let query={_id:req.params.id};
+    // console.log(mongoose.Types.ObjectId.isValid(req.params.id));
+    
     Article.update(query,article,(err)=>{
         if (err) {
             console.log(err);
@@ -119,6 +160,19 @@ app.post('/article/edit/:id',(req,res)=>{
     });
     
 });
+
+//Delete
+app.delete('/article/:id',(req,res)=>{
+    let query={_id:req.params.id};
+    Article.remove(query,(err)=>{
+        if (err) {
+            console.log(err);
+        } else {
+            res.send("Success");
+        }
+    })
+}); 
+
 
 // Server
 app.listen(4000,(err)=>{

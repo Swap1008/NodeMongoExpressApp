@@ -5,7 +5,7 @@ block content
         .col-2
         .col-8
             h1 #{title}
-            form(action="/article/edit/:id", method="post")
+            form(action="/article/edit/"+article._id, method="post")
                 #form-group
                     label Title:
                     input.form-control(type="text", name="title" value=article.title)
