@@ -1,0 +1,12 @@
+extends layout
+
+block content
+    .row
+        .col-2
+        .col-8
+            h1=article.title
+            h6 Written By: #{article.author}
+            p #{article.body}
+            hr
+            a.btn.btn-default(href="/article/edit/"+ article._id) Edit
+    
