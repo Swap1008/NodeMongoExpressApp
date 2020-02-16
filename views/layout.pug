@@ -13,10 +13,19 @@ html(lang="en")
             #navbarsExampleDefault.collapse.navbar-collapse
                 ul.navbar-nav.mr-auto
                     li.nav-item.active
-                        a.nav-link(href='/') Home
+                        a.nav-link(href='/articles') Home
                             span.sr-only (current)
                     li.nav-item
-                        a.nav-link(href='/article/add') Add Article                        
+                        a.nav-link(href='/articles/add') Add Article
+                ul.nav.nav-navbar.navbar-right
+                    if user
+                        li.nav-item 
+                            a.nav-link(href='/users/logout') Logout
+                    else
+                        li.nav-item
+                            a.nav-link(href='/users/register') Register
+                        li.nav-item
+                            a.nav-link(href="/users/login") Login                        
         .container
         block content
         br

@@ -2,17 +2,17 @@ const express=require('express');
 const path=require('path')
 const mongoose=require('mongoose');
 const bodyParser=require('body-parser');
-const expressValidator=require('express-validator');
+const {expressValidator,check}=require('express-validator/check');
 const flash=require('connect-flash');
 const session=require('express-session');
-
-
+const config=require('./config/database');
+const passport=require('passport');
 const app=express();
 
 // Mongoose
 // password = demo@2020 but @ was substitued for %40 as mongodb does not accept @.
 let password='demo%402020'
-mongoose.connect(`mongodb://demouser:${password}@ds161074.mlab.com:61074/restifydb`,{
+mongoose.connect(config.database,{
     useNewUrlParser:true,
     useUnifiedTopology:true
 },function(error){
@@ -26,7 +26,7 @@ mongoose.connect(`mongodb://demouser:${password}@ds161074.mlab.com:61074/restify
 
 // Models
 
-let Article=require('./models/article');
+
 
 // View Engine
 app.set('views',path.join(__dirname,'views'));
@@ -55,124 +55,26 @@ app.use(function (req, res, next) {
 });  
 
 // Express Validator
-app.use(expressValidator({
-    errorFormater:function(param,msg,value){
-        let namespace=param.split('.')
-        , root= namespace.shift()
-        , formParam= root;
+// app.use(expressValidator({ }));
 
-        while (namespace.length) {
-            formParam += '[' +namespace +']';
+// 
+require('./config/passport')(passport);
 
-        }
-        return {
-            param: formParam,
-            msg:msg,
-            value:value
-        };
-    }
-}));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
-app.get('/',(req,res)=>{
-    Article.find({},function(err,articles){
-        if (err) {
-            console.log(err);
-        } else {
-            // console.log(articles);    
-            res.render("index",{
-                title:'Articles',
-                articles:articles
-            });
-        }
-    })
+app.get('*',function(req,res,next){
+    res.locals.user=req.user || null;
+    next();
 });
 
-app.get('/article/add',(req,res)=>{
-    res.render("addArticle",{
-        title:"Add Article"
-        
-    });
-});
-
-app.post('/article/add',(req,res)=>{
-    let article=new Article();
-    article.title=req.body.title;
-    article.author=req.body.author;
-    article.body=req.body.body;
-
-    article.save((err)=>{
-        if (err) {
-            console.log(err);
-            return;
-        }else{
-            res.redirect('/');
-        }
-    });
-    
-});
+let articles=require('./routes/articles');
+let users=require('./routes/users');
+app.use('/articles',articles);
+app.use('/users',users);
 
 // View Article
-app.get('/article/:id',(req,res)=>{
-    Article.findById(req.params.id,(err,article)=>{
-        if (err) {
-            console.log(err);
-        }else{
-            res.render("article",{
-                article:article,
-                title:'Edit Article'
-                
-            });
-        }
-    });
-});
-// Edit Article
-app.get('/article/edit/:id',(req,res)=>{
-    Article.findById(req.params.id,(err,article)=>{
-        if (err) {
-            console.log(err);
-        }else{
-            res.render("edit_article",{
-                article:article
-                
-            });
-        }
-    });
-});
-
-
-app.post('/article/edit/:id',(req,res)=>{
-    let article={};
-    article.title=req.body.title;
-    article.author=req.body.author;
-    article.body=req.body.body;
-
-    let query={_id:req.params.id};
-    // console.log(mongoose.Types.ObjectId.isValid(req.params.id));
-    
-    Article.update(query,article,(err)=>{
-        if (err) {
-            console.log(err);
-            return;
-        }else{
-            res.redirect('/');
-        }
-    });
-    
-});
-
-//Delete
-app.delete('/article/:id',(req,res)=>{
-    let query={_id:req.params.id};
-    Article.remove(query,(err)=>{
-        if (err) {
-            console.log(err);
-        } else {
-            res.send("Success");
-        }
-    })
-}); 
-
 
 // Server
 app.listen(4000,(err)=>{
